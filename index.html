@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自定义翻转卡片游戏 - 多组与历史记录</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+      color: #333;
+      line-height: 1.6;
+      padding: 15px;
+      min-height: 100vh;
+      transition: padding 0.3s ease;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 25px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+      font-size: 2.2rem;
+      transition: font-size 0.3s ease;
+    }
+
+    .subtitle {
+      color: #3498db;
+      font-size: 1.2rem;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.5;
+      transition: all 0.3s ease;
+    }
+
+    .controls-top {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin: 25px 0;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 20px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: #2c80b9;
+    }
+
+    .btn-secondary {
+      background: #e74c3c;
+    }
+
+    .btn-secondary:hover {
+      background: #c0392b;
+    }
+
+    .btn-cancel {
+      background: #95a5a6;
+    }
+
+    .btn-cancel:hover {
+      background: #7f8c8d;
+    }
+
+    .btn-success {
+      background: #2ecc71;
+    }
+
+    .btn-success:hover {
+      background: #27ae60;
+    }
+
+    .btn-warning {
+      background: #f39c12;
+    }
+
+    .btn-warning:hover {
+      background: #e67e22;
+    }
+
+    .btn-history {
+      background: #9b59b6;
+    }
+
+    .btn-history:hover {
+      background: #8e44ad;
+    }
+
+    .group-selector-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: white;
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    label {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    .card {
+      perspective: 1000px;
+      cursor: pointer;
+      border: 2px solid #3498db;
+      border-radius: 15px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      width: 280px;
+      height: 280px;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      font-weight: bold;
+      text-align: center;
+      line-height: 1.4;
+      overflow: hidden;
+      word-break: break-word;
+    }
+
+    .card-front {
+      background: linear-gradient(135deg, #3498db 0%, #1a56db 100%);
+      color: white;
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      transform: rotateY(180deg);
+      color: white;
+    }
+
+    .card-number {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(0, 0, 0, 0.3);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .content-count {
+      font-size: 0.85rem;
+      color: #7f8c8d;
+      margin-top: 5px;
+      font-style: italic;
+    }
+
+    .card-settings {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      border: 1px solid #eee;
+    }
+
+    .card-settings h3 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px;
+      color: #7f8c8d;
+      font-size: 0.9rem;
+    }
+
+    .settings-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .settings-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .settings-modal {
+      background: white;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 1000px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+      position: relative;
+      padding: 30px;
+      transition: transform 0.3s ease;
+    }
+
+    .settings-modal.active {
+      transform: translateY(0);
+    }
+
+    .settings-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .settings-modal-title {
+      font-size: 1.8rem;
+      color: #2c3e50;
+    }
+
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      color: #7f8c8d;
+      transition: color 0.2s;
+    }
+
+    .close-modal:hover {
+      color: #e74c3c;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+      resize: vertical;
+    }
+
+    .form-group input[type="color"],
+    .form-group input[type="number"] {
+      padding: 10px;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+
+    .btn-settings {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .btn-settings:hover {
+      background: #2c80b9;
+    }
+
+    .auto-hide-settings {
+      background: #e8f4fd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      border: 1px solid #b3d4ff;
+    }
+
+    .auto-hide-settings label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .auto-hide-settings .time-input {
+      width: 80px;
+      text-align: center;
+      font-size: 1.1rem;
+    }
+
+    /* 新增：音效设置区域 */
+    .sound-settings {
+      background: #f0f9ff;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      border: 1px solid #bee3f8;
+    }
+
+    .sound-settings label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .mode-info {
+      background: #e3f2fd;
+      border-left: 4px solid #3498db;
+      padding: 15px;
+      border-radius: 0 8px 8px 0;
+      margin-top: 15px;
+      font-style: italic;
+    }
+
+    .button-container.settings-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 25px;
+      justify-content: center;
+    }
+
+    .cards-container {
+      display: grid;
+      gap: 25px;
+      justify-content: center;
+      align-items: start;
+      margin: 30px auto;
+      max-width: calc(100% - 30px);
+    }
+
+    .group-management-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .group-management-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .group-management-modal {
+      background: white;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+      position: relative;
+      padding: 30px;
+      transition: transform 0.3s ease;
+    }
+
+    .group-management-modal.active {
+      transform: translateY(0);
+    }
+
+    .group-management-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .group-management-title {
+      font-size: 1.8rem;
+      color: #2c3e50;
+    }
+
+    .group-list {
+      list-style: none;
+      margin-bottom: 25px;
+      max-height: 40vh;
+      overflow-y: auto;
+    }
+
+    .group-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      background: #f8f9fa;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .group-list-item.current {
+      background: #e3f2fd;
+      border-color: #3498db;
+    }
+
+    .group-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-group-action {
+      padding: 5px 10px;
+      font-size: 0.9rem;
+      border-radius: 5px;
+    }
+
+    .new-group-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .new-group-form input {
+      flex-grow: 1;
+    }
+
+    .btn-group-new {
+      padding: 10px 15px;
+      font-size: 1rem;
+    }
+
+    .history-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1002;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .history-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .history-modal {
+      background: white;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 1200px;
+      max-height: 90vh;
+      overflow: hidden;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+      position: relative;
+      transition: transform 0.3s ease;
+    }
+
+    .history-modal.active {
+      transform: translateY(0);
+    }
+
+    .history-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0;
+      padding: 20px 30px;
+      border-bottom: 1px solid #eee;
+      background: #f8f9fa;
+    }
+
+    .history-modal-title {
+      font-size: 1.8rem;
+      color: #2c3e50;
+    }
+
+    .close-history-modal {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      color: #7f8c8d;
+      transition: color 0.2s;
+    }
+
+    .close-history-modal:hover {
+      color: #e74c3c;
+    }
+
+    .history-controls {
+      padding: 15px 30px;
+      background: #f1f8ff;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-table-container {
+      max-height: calc(70vh - 150px);
+      overflow-y: auto;
+    }
+
+    table.history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    table.history-table th,
+    table.history-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    table.history-table th {
+      background-color: #eef2f7;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    table.history-table tbody tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    table.history-table tbody tr:hover {
+      background-color: #e3f2fd;
+    }
+
+    .record-actions {
+      display: flex;
+      gap: 5px;
+    }
+
+    .btn-record-action {
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+    }
+
+    .btn-use {
+      background: #2ecc71;
+      color: white;
+    }
+
+    .btn-use:hover {
+      background: #27ae60;
+    }
+
+    .btn-delete-one {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-delete-one:hover {
+      background: #c0392b;
+    }
+
+    .checkbox-cell {
+      width: 40px;
+      text-align: center;
+    }
+
+    .btn-delete-selected {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-delete-selected:hover {
+      background: #c0392b;
+    }
+
+    .history-info {
+      font-size: 0.85rem;
+      color: #7f8c8d;
+      font-style: italic;
+    }
+
+    @media (max-width: 768px) {
+      .cards-container {
+        grid-template-columns: 1fr;
+      }
+
+      .card-front,
+      .card-back {
+        font-size: 1.2rem;
+      }
+
+      .controls-top {
+        flex-direction: column;
+      }
+
+      .history-controls {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      table.history-table,
+      table.history-table thead,
+      table.history-table tbody,
+      table.history-table th,
+      table.history-table td,
+      table.history-table tr {
+        display: block;
+      }
+
+      table.history-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+      }
+
+      table.history-table tr {
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+
+      table.history-table td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+      }
+
+      table.history-table td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        width: 45%;
+        font-weight: bold;
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .settings-grid,
+      .group-management-modal {
+        grid-template-columns: 1fr;
+      }
+
+      .card-front,
+      .card-back {
+        font-size: 1rem;
+      }
+
+      .button-container.settings-buttons,
+      .group-actions,
+      .record-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="flippedCount" style="position: fixed; top: 10px; right: 10px; color: #2c3e50; font-weight: bold; background: rgba(255,255,255,0.7); padding: 2px 5px; border-radius: 4px; z-index: 1000;">翻开：0</div>
+  <div class="container">
+    <header>
+      <h1>翻转卡片游戏</h1>
+      <p class="subtitle">祝欧祝欧</p>
+    </header>
+
+    <!-- 顶部控制栏，包含组别选择器 -->
+    <div class="controls-top">
+      <div class="group-selector-container">
+        <label for="groupSelector">当前组:</label>
+        <select id="groupSelector">
+          <!-- 选项将由JavaScript动态填充 -->
+        </select>
+      </div>
+      <button class="btn" id="manageGroupsBtn">管理组</button>
+      <button class="btn btn-history" id="showHistoryBtn">查看历史记录</button>
+    </div>
+
+    <div class="controls-top">
+      <button class="btn" id="generateBtn">生成卡片</button>
+      <button class="btn btn-secondary" id="shuffleBtn">重新打乱</button>
+      <button class="btn" id="settingsBtn">卡片设置</button>
+    </div>
+
+    <div class="cards-container" id="cardsContainer"></div>
+
+    <!-- 卡片设置模态框 -->
+    <div class="settings-overlay" id="settingsOverlay">
+      <div class="settings-modal" id="settingsModal">
+        <div class="settings-modal-header">
+          <h2 class="settings-modal-title">卡片设置</h2>
+          <button class="close-modal" id="closeModal">&times;</button>
+        </div>
+        <div class="settings-content">
+          <div class="settings-grid">
+            <div class="form-group">
+              <label for="cardCount">卡片数量</label>
+              <input type="number" id="cardCount" min="1" max="30" value="10">
+            </div>
+            <div class="form-group">
+              <label for="faceAContent">面A内容（固定顺序 / 随机）</label>
+              <textarea id="faceAContent" rows="3" placeholder="输入面A内容（每行一个）">苹果
+香蕉
+橙子
+西瓜
+草莓
+葡萄
+芒果
+樱桃
+柠檬
+菠萝</textarea>
+              <div class="content-count">当前输入：10行</div>
+            </div>
+            <div class="form-group">
+              <label for="faceBContent">面B内容（随机打乱）</label>
+              <textarea id="faceBContent" rows="3" placeholder="输入面B内容（每行一个，随机打乱）">Apple
+Banana
+Orange
+Watermelon
+Strawberry
+Grape
+Mango
+Cherry
+Lemon
+Pineapple</textarea>
+              <div class="content-count">当前输入：10行</div>
+            </div>
+            <div class="form-group">
+              <label for="mode">模式选择</label>
+              <select id="mode">
+                <option value="fixed">面A固定模式</option>
+                <option value="shuffle">面A打乱模式</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="faceAFontSize">面A字体大小 (px)</label>
+              <input type="number" id="faceAFontSize" min="10" max="50" value="24">
+            </div>
+            <div class="form-group">
+              <label for="faceAColor">面A字体颜色</label>
+              <input type="color" id="faceAColor" value="#ffffff">
+            </div>
+            <div class="form-group">
+              <label for="faceABgColor">面A背景颜色</label>
+              <input type="color" id="faceABgColor" value="#3498db">
+            </div>
+            <div class="form-group">
+              <label for="faceBFontSize">面B字体大小 (px)</label>
+              <input type="number" id="faceBFontSize" min="10" max="50" value="24">
+            </div>
+            <div class="form-group">
+              <label for="faceBColor">面B字体颜色</label>
+              <input type="color" id="faceBColor" value="#ffffff">
+            </div>
+            <div class="form-group">
+              <label for="faceBBgColor">面B背景颜色</label>
+              <input type="color" id="faceBBgColor" value="#e74c3c">
+            </div>
+            <div class="form-group">
+              <label for="cardWidth">卡片宽度 (px)</label>
+              <input type="number" id="cardWidth" min="150" max="600" value="280">
+            </div>
+            <div class="form-group">
+              <label for="cardHeight">卡片高度 (px)</label>
+              <input type="number" id="cardHeight" min="150" max="600" value="280">
+            </div>
+            <div class="form-group">
+              <label for="cardBgColor">卡片背景颜色</label>
+              <input type="color" id="cardBgColor" value="#ffffff">
+            </div>
+            <div class="form-group">
+              <label for="cardBorderColor">卡片边框颜色</label>
+              <input type="color" id="cardBorderColor" value="#3498db">
+            </div>
+            <div class="form-group">
+              <label for="cardsPerRow">每行显示卡牌数量</label>
+              <input type="number" id="cardsPerRow" min="1" value="3">
+              <div class="content-count" style="margin-top: 5px; font-size: 0.85rem; color: #7f8c8d;">
+                (输入任意正整数，留空则根据卡片宽度自动适配)
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="cardGap">卡片间距 (px)</label>
+              <input type="number" id="cardGap" min="10" max="50" value="25">
+            </div>
+            <div class="auto-hide-settings">
+              <h3 style="margin-bottom: 15px; color: #2c3e50;">自动消失设置</h3>
+              <div class="form-group">
+                <label for="autoHideCards"><input type="checkbox" id="autoHideCards" checked>启用自动消失</label>
+                <div class="auto-hide-info">启用后，卡片翻转到面B后自动消失</div>
+              </div>
+              <div class="form-group">
+                <label for="autoHideTime">自动消失时间 (秒)<small style="color: #7f8c8d; font-size: 0.8rem; margin-left: 5px;">(1-10秒)</small></label>
+                <input type="number" id="autoHideTime" min="1" max="10" value="2" class="time-input">
+              </div>
+            </div>
+          </div>
+          <div class="mode-info">
+            <strong>面A固定模式：</strong>面A按输入顺序（1,2,3...）显示，面B随机打乱
+          </div>
+          <div class="mode-info">
+            <strong>面A打乱模式：</strong>面A和面B都各自独立随机排列
+          </div>
+          <div class="button-container settings-buttons">
+            <button class="btn btn-cancel" id="cancelSettings">取消</button>
+            <button class="btn" id="applySettings">应用设置</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 组管理模态框 -->
+    <div class="group-management-overlay" id="groupManagementOverlay">
+      <div class="group-management-modal" id="groupManagementModal">
+        <div class="group-management-header">
+          <h2 class="group-management-title">管理组别</h2>
+          <button class="close-modal" id="closeGroupModal">&times;</button>
+        </div>
+        <div class="group-management-content">
+          <div class="new-group-form">
+            <input type="text" id="newGroupNameInput" placeholder="输入新组名称">
+            <button class="btn btn-success btn-group-new" id="createGroupBtn">创建</button>
+          </div>
+          <ul class="group-list" id="groupList">
+            <!-- 组列表将由JavaScript动态填充 -->
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 历史记录模态框 -->
+    <div class="history-overlay" id="historyOverlay">
+      <div class="history-modal" id="historyModal">
+        <div class="history-modal-header">
+          <h2 class="history-modal-title">历史记录</h2>
+          <button class="close-history-modal" id="closeHistoryModal">&times;</button>
+        </div>
+        <div class="history-controls">
+          <div>
+            <button class="btn btn-delete-selected" id="deleteSelectedBtn">删除选中</button>
+            <button class="btn" id="selectAllBtn">全选/取消全选</button>
+          </div>
+          <div class="history-info"><span id="historyCountInfo">共 0 条记录</span></div>
+        </div>
+        <div class="history-table-container">
+          <table class="history-table" id="historyTable">
+            <thead>
+              <tr>
+                <th class="checkbox-cell"><input type="checkbox" id="selectAllCheckbox"></th>
+                <th>序号</th>
+                <th>时间</th>
+                <th>模式</th>
+                <th>卡片数量</th>
+                <th>面A内容 (部分)</th>
+                <th>面B内容 (部分)</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <!-- 历史记录行将由JavaScript动态填充 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>稳定版 - 自定义翻转卡片游戏 | 完全自适应设计 | 2026</p>
+    </footer>
+
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        // 新增：跟踪翻开数量
+        let flippedCount = 0;
+    
+        // --- DOM Elements ---
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const closeModal = document.getElementById('closeModal');
+        const cancelSettings = document.getElementById('cancelSettings');
+        const generateBtn = document.getElementById('generateBtn');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const cardsContainer = document.getElementById('cardsContainer');
+        const faceAContent = document.getElementById('faceAContent');
+        const faceBContent = document.getElementById('faceBContent');
+        const applySettingsBtn = document.getElementById('applySettings');
+        const groupSelector = document.getElementById('groupSelector');
+        const manageGroupsBtn = document.getElementById('manageGroupsBtn');
+        const groupManagementOverlay = document.getElementById('groupManagementOverlay');
+        const closeGroupModal = document.getElementById('closeGroupModal');
+        const newGroupNameInput = document.getElementById('newGroupNameInput');
+        const createGroupBtn = document.getElementById('createGroupBtn');
+        const groupList = document.getElementById('groupList');
+        const showHistoryBtn = document.getElementById('showHistoryBtn');
+        const historyOverlay = document.getElementById('historyOverlay');
+        const closeHistoryModal = document.getElementById('closeHistoryModal');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const historyTableBody = document.getElementById('historyTableBody');
+        const historyCountInfo = document.getElementById('historyCountInfo');
+
+        // --- Local Storage Keys ---
+        const GROUP_LIST_KEY = 'flipCardGroupsList';
+        const CURRENT_GROUP_KEY = 'flipCardCurrentGroup';
+        const HISTORY_KEY = 'flipCardHistory';
+
+        // --- Global State ---
+        let currentGroup = localStorage.getItem(CURRENT_GROUP_KEY) || 'defaultGroup';
+        let groups = JSON.parse(localStorage.getItem(GROUP_LIST_KEY)) || {};
+        let history = JSON.parse(localStorage.getItem(HISTORY_KEY)) || {};
+
+        if (!groups[currentGroup]) {
+          groups[currentGroup] = getDefaultSettings();
+          saveGroupsToStorage();
+        }
+
+
+        // --- Core Functions ---
+        function getDefaultSettings() {
+          return {
+            cardCount: 10,
+            faceAContent: "苹果\n香蕉\n橙子\n西瓜\n草莓\n葡萄\n芒果\n樱桃\n柠檬\n菠萝",
+            faceBContent: "Apple\nBanana\nOrange\nWatermelon\nStrawberry\nGrape\nMango\nCherry\nLemon\nPineapple",
+            mode: "fixed",
+            faceAFontSize: 24,
+            faceAColor: "#ffffff",
+            faceABgColor: "#3498db",
+            faceBFontSize: 24,
+            faceBColor: "#ffffff",
+            faceBBgColor: "#e74c3c",
+            cardWidth: 280,
+            cardHeight: 280,
+            cardBgColor: "#ffffff",
+            cardBorderColor: "#3498db",
+            cardsPerRow: 3,
+            cardGap: 25,
+            autoHideCards: true,
+            autoHideTime: 2
+          };
+        }
+
+        function saveGroupsToStorage() {
+          localStorage.setItem(GROUP_LIST_KEY, JSON.stringify(groups));
+          localStorage.setItem(CURRENT_GROUP_KEY, currentGroup);
+        }
+
+        function saveHistoryToStorage() {
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        }
+
+        function populateGroupSelector() {
+          groupSelector.innerHTML = '';
+          for (var name in groups) {
+            var option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            if (name === currentGroup) {
+              option.selected = true;
+            }
+            groupSelector.appendChild(option);
+          }
+        }
+
+        function loadGroupIntoForm(groupName) {
+          var config = groups[groupName] || getDefaultSettings();
+          document.getElementById('cardCount').value = config.cardCount;
+          document.getElementById('faceAContent').value = config.faceAContent;
+          document.getElementById('faceBContent').value = config.faceBContent;
+          document.getElementById('mode').value = config.mode;
+          document.getElementById('faceAFontSize').value = config.faceAFontSize;
+          document.getElementById('faceAColor').value = config.faceAColor;
+          document.getElementById('faceABgColor').value = config.faceABgColor;
+          document.getElementById('faceBFontSize').value = config.faceBFontSize;
+          document.getElementById('faceBColor').value = config.faceBColor;
+          document.getElementById('faceBBgColor').value = config.faceBBgColor;
+          document.getElementById('cardWidth').value = config.cardWidth;
+          document.getElementById('cardHeight').value = config.cardHeight;
+          document.getElementById('cardBgColor').value = config.cardBgColor;
+          document.getElementById('cardBorderColor').value = config.cardBorderColor;
+          document.getElementById('cardsPerRow').value = config.cardsPerRow;
+          document.getElementById('cardGap').value = config.cardGap;
+          document.getElementById('autoHideCards').checked = config.autoHideCards;
+          document.getElementById('autoHideTime').value = config.autoHideTime;
+          updateContentCounts();
+        }
+
+        function saveCurrentFormToGroup(groupName) {
+          groups[groupName] = {
+            cardCount: parseInt(document.getElementById('cardCount').value) || 10,
+            faceAContent: document.getElementById('faceAContent').value,
+            faceBContent: document.getElementById('faceBContent').value,
+            mode: document.getElementById('mode').value,
+            faceAFontSize: parseInt(document.getElementById('faceAFontSize').value) || 24,
+            faceAColor: document.getElementById('faceAColor').value,
+            faceABgColor: document.getElementById('faceABgColor').value,
+            faceBFontSize: parseInt(document.getElementById('faceBFontSize').value) || 24,
+            faceBColor: document.getElementById('faceBColor').value,
+            faceBBgColor: document.getElementById('faceBBgColor').value,
+            cardWidth: parseInt(document.getElementById('cardWidth').value) || 280,
+            cardHeight: parseInt(document.getElementById('cardHeight').value) || 280,
+            cardBgColor: document.getElementById('cardBgColor').value,
+            cardBorderColor: document.getElementById('cardBorderColor').value,
+            cardsPerRow: parseInt(document.getElementById('cardsPerRow').value) || 3,
+            cardGap: parseInt(document.getElementById('cardGap').value) || 25,
+            autoHideCards: document.getElementById('autoHideCards').checked,
+            autoHideTime: parseInt(document.getElementById('autoHideTime').value) || 2
+          };
+          saveGroupsToStorage();
+        }
+
+        function updateContentCounts() {
+          var linesA = document.getElementById('faceAContent').value.split('\n').filter(function(line) { return line.trim() !== ''; }).length;
+          var linesB = document.getElementById('faceBContent').value.split('\n').filter(function(line) { return line.trim() !== ''; }).length;
+          document.querySelectorAll('.content-count')[0].textContent = '当前输入：' + linesA + '行';
+          document.querySelectorAll('.content-count')[1].textContent = '当前输入：' + linesB + '行';
+        }
+
+        function shuffle(array) {
+          var newArray = array.slice();
+          for (var i = newArray.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+          }
+          return newArray;
+        }
+
+        function generateCards() {
+          // 新增：重置翻开数量
+          flippedCount = 0;
+  
+          var config = groups[currentGroup];
+          if (!config) return;
+
+          var count = config.cardCount;
+          var faceAList = config.faceAContent.split('\n').filter(function(item) { return item.trim() !== ''; });
+          var faceBList = config.faceBContent.split('\n').filter(function(item) { return item.trim() !== ''; });
+
+          if (faceAList.length < count || faceBList.length < count) {
+              alert('错误：卡片数量为 ' + count + '，但面A有 ' + faceAList.length + ' 项，面B有 ' + faceBList.length + ' 项。请确保两个面的内容都足够。');
+              return;
+          }
+
+          // 根据模式决定如何处理面A和面B
+          var selectedFaceAList;
+          if (config.mode === 'fixed') {
+              // 固定模式：面A顺序不变，面B随机
+              selectedFaceAList = faceAList.slice(0, count);
+          } else { // shuffle 模式
+              // 打乱模式：面A和面B都随机
+              selectedFaceAList = shuffle(faceAList).slice(0, count);
+          }
+          var shuffledFaceBList = shuffle(faceBList).slice(0, count);
+
+          cardsContainer.innerHTML = '';
+          var cardsPerRowValue = config.cardsPerRow;
+          if(cardsPerRowValue && cardsPerRowValue > 0) {
+            cardsContainer.style.gridTemplateColumns = 'repeat(' + cardsPerRowValue + ', minmax(0, 1fr))';
+          } else {
+            cardsContainer.style.gridTemplateColumns = 'repeat(auto-fit, minmax(min(' + config.cardWidth + 'px, 100%), 1fr))';
+          }
+          cardsContainer.style.gap = config.cardGap + 'px';
+
+          for (var i = 0; i < count; i++) {
+            var cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            cardElement.style.width = config.cardWidth + 'px';
+            cardElement.style.height = config.cardHeight + 'px';
+            cardElement.style.backgroundColor = config.cardBgColor;
+            cardElement.style.borderColor = config.cardBorderColor;
+
+            cardElement.innerHTML = `
+              <div class="card-inner">
+                <div class="card-front" style="font-size: ${config.faceAFontSize}px; color: ${config.faceAColor}; background: ${config.faceABgColor};">
+                  <div>${selectedFaceAList[i]}</div>
+                  <div class="card-number">${i+1}</div>
+                </div>
+                <div class="card-back" style="font-size: ${config.faceBFontSize}px; color: ${config.faceBColor}; background: ${config.faceBBgColor};">
+                  <div>${shuffledFaceBList[i]}</div>
+                  <div class="card-number">${i+1}</div>
+                </div>
+              </div>
+            `;
+
+            // 为卡片点击事件绑定音效播放和翻转逻辑
+            // 修改后的点击事件处理
+            (function(element, inner) {
+              element.addEventListener('click', function() {
+        
+                // 检查卡片当前状态
+                let isFlipped = inner.style.transform === 'rotateY(180deg)';
+        
+                // 更新翻转状态
+                inner.style.transform = isFlipped ? 'rotateY(0deg)' : 'rotateY(180deg)';
+        
+                // 更新翻开数量
+                if (isFlipped) {
+                  flippedCount--;
+                } else {
+                  flippedCount++;
+                }
+        
+                // 更新显示（关键：现在显示在页面右上角）
+                document.getElementById('flippedCount').textContent = '翻开：' + flippedCount;
+        
+                if (config.autoHideCards) {
+                  setTimeout(function() {
+                    if (inner.style.transform === 'rotateY(180deg)') {
+                      element.style.opacity = '0';
+                      element.style.pointerEvents = 'none';
+                    }
+                  }, config.autoHideTime * 1000);
+                }
+              });
+            })(cardElement, cardElement.querySelector('.card-inner'));
+
+            cardsContainer.appendChild(cardElement);
+          }
+
+          // 记录到历史
+          var historyRecord = {
+            timestamp: new Date().toLocaleString(),
+            mode: config.mode,
+            cardCount: config.cardCount,
+            faceAContent: config.faceAContent,
+            faceBContent: config.faceBContent
+          };
+          if (!history[currentGroup]) {
+            history[currentGroup] = [];
+          }
+          history[currentGroup].unshift(historyRecord);
+          // 限制每个组的历史记录数量为20条
+          if (history[currentGroup].length > 20) {
+              history[currentGroup].pop();
+          }
+          saveHistoryToStorage();
+        }
+
+        function openSettings() {
+          loadGroupIntoForm(currentGroup);
+          settingsOverlay.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+
+        function closeSettings() {
+          settingsOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+
+        function openGroupManagement() {
+          renderGroupList();
+          groupManagementOverlay.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+
+        function closeGroupManagement() {
+          groupManagementOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+
+        function switchToGroup(name) {
+          currentGroup = name;
+          populateGroupSelector();
+          loadGroupIntoForm(currentGroup);
+          generateCards();
+          closeGroupManagement();
+        }
+
+        function renderGroupList() {
+          groupList.innerHTML = '';
+          for (var name in groups) {
+            var li = document.createElement('li');
+            li.className = 'group-list-item';
+            if (name === currentGroup) {
+              li.classList.add('current');
+            }
+            li.innerHTML = `
+              <span>${name}</span>
+              <div class="group-actions">
+                <button class="btn btn-secondary btn-group-action" data-action="switch" data-name="${name}">切换</button>
+                <button class="btn btn-warning btn-group-action" data-action="rename" data-name="${name}">重命名</button>
+                <button class="btn btn-danger btn-group-action" data-action="delete" data-name="${name}">删除</button>
+              </div>
+            `;
+            groupList.appendChild(li);
+          }
+        }
+
+        function openHistory() {
+          renderHistoryTable();
+          historyOverlay.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+
+        function closeHistory() {
+          historyOverlay.classList.remove('active');
+          document.body.style.overflow = '';
+        }
+
+        function renderHistoryTable() {
+          historyTableBody.innerHTML = '';
+          var currentGroupHistory = history[currentGroup] || [];
+          for (var i = 0; i < currentGroupHistory.length; i++) {
+            var record = currentGroupHistory[i];
+            
+            var truncatedFaceA = record.faceAContent.split('\n').slice(0, 3).join(', ');
+            var truncatedFaceB = record.faceBContent.split('\n').slice(0, 3).join(', ');
+
+            var row = document.createElement('tr');
+            row.innerHTML = `
+              <td class="checkbox-cell"><input type="checkbox" data-index="${i}"></td>
+              <td>${i + 1}</td>
+              <td>${record.timestamp}</td>
+              <td>${record.mode === 'fixed' ? '面A固定' : '面A打乱'}</td>
+              <td>${record.cardCount}</td>
+              <td data-label="面A内容 (部分)">${truncatedFaceA}</td>
+              <td data-label="面B内容 (部分)">${truncatedFaceB}</td>
+              <td class="record-actions">
+                <button class="btn btn-use btn-record-action" data-action="use" data-index="${i}">使用</button>
+                <button class="btn btn-delete-one btn-record-action" data-action="delete" data-index="${i}">删除</button>
+              </td>
+            `;
+            historyTableBody.appendChild(row);
+          }
+          updateHistoryCount();
+        }
+
+        function updateHistoryCount() {
+          var currentGroupHistory = history[currentGroup] || [];
+          historyCountInfo.textContent = '共 ' + currentGroupHistory.length + ' 条记录';
+        }
+
+        function useHistoryRecord(index) {
+          var currentGroupHistory = history[currentGroup] || [];
+          var record = currentGroupHistory[index];
+          if (record) {
+            document.getElementById('faceAContent').value = record.faceAContent;
+            document.getElementById('faceBContent').value = record.faceBContent;
+            document.getElementById('mode').value = record.mode;
+            updateContentCounts();
+            closeHistory();
+          }
+        }
+
+        // --- Event Delegation for Dynamic Lists ---
+        groupList.addEventListener('click', function(e) {
+          if (e.target.classList.contains('btn-group-action')) {
+            var action = e.target.getAttribute('data-action');
+            var name = e.target.getAttribute('data-name');
+
+            if (action === 'switch') {
+              switchToGroup(name);
+            } else if (action === 'rename') {
+              var newName = prompt('请输入新的组名:', name);
+              if (newName && newName !== name && !groups[newName]) {
+                groups[newName] = JSON.parse(JSON.stringify(groups[name])); // Deep clone
+                delete groups[name];
+                if (currentGroup === name) {
+                  currentGroup = newName;
+                }
+                saveGroupsToStorage();
+                populateGroupSelector();
+                renderGroupList();
+              } else if (groups[newName] && newName !== name) {
+                  alert("该组名已存在！");
+              }
+            } else if (action === 'delete') {
+              if (Object.keys(groups).length <= 1) {
+                alert("至少需要保留一个组！");
+                return;
+              }
+              if (confirm('确定要删除组 "' + name + '" 吗？')) {
+                delete groups[name];
+                if (currentGroup === name) {
+                  currentGroup = Object.keys(groups)[0];
+                }
+                saveGroupsToStorage();
+                populateGroupSelector();
+                renderGroupList();
+              }
+            }
+          }
+        });
+
+        historyTableBody.addEventListener('click', function(e) {
+          if (e.target.classList.contains('btn-record-action')) {
+            var action = e.target.getAttribute('data-action');
+            var index = parseInt(e.target.getAttribute('data-index'));
+
+            if (action === 'use') {
+              useHistoryRecord(index);
+            } else if (action === 'delete') {
+              if (confirm('确定要删除这条历史记录吗？')) {
+                var currentGroupHistory = history[currentGroup];
+                if (currentGroupHistory && currentGroupHistory[index] !== undefined) {
+                  currentGroupHistory.splice(index, 1);
+                  saveHistoryToStorage();
+                  renderHistoryTable();
+                }
+              }
+            }
+          }
+        });
+
+        // --- Other Event Listeners ---
+        settingsBtn.addEventListener('click', openSettings);
+        closeModal.addEventListener('click', closeSettings);
+        cancelSettings.addEventListener('click', closeSettings);
+        generateBtn.addEventListener('click', function() {
+          saveCurrentFormToGroup(currentGroup);
+          generateCards();
+        });
+        shuffleBtn.addEventListener('click', function() {
+            if (confirm('确定要重新打乱卡片吗？')) {
+                generateCards();
+            }
+        });
+        applySettingsBtn.addEventListener('click', function() {
+          saveCurrentFormToGroup(currentGroup);
+          closeSettings();
+          generateCards();
+        });
+        groupSelector.addEventListener('change', function(e) {
+          currentGroup = e.target.value;
+          localStorage.setItem(CURRENT_GROUP_KEY, currentGroup);
+          loadGroupIntoForm(currentGroup);
+          generateCards();
+        });
+        manageGroupsBtn.addEventListener('click', openGroupManagement);
+        closeGroupModal.addEventListener('click', closeGroupManagement);
+        createGroupBtn.addEventListener('click', function() {
+          var newName = newGroupNameInput.value.trim();
+          if (newName && !groups[newName]) {
+            groups[newName] = getDefaultSettings();
+            saveGroupsToStorage();
+            populateGroupSelector();
+            newGroupNameInput.value = '';
+            renderGroupList();
+          } else if (groups[newName]) {
+              alert("该组名已存在！");
+          }
+        });
+        showHistoryBtn.addEventListener('click', openHistory);
+        closeHistoryModal.addEventListener('click', closeHistory);
+        deleteSelectedBtn.addEventListener('click', function() {
+            var checkboxes = historyTableBody.querySelectorAll('input[type="checkbox"]:checked');
+            var indices = [];
+            for(var i = 0; i < checkboxes.length; i++){
+                indices.push(parseInt(checkboxes[i].getAttribute('data-index')));
+            }
+            // Sort descending to safely splice from the end
+            indices.sort(function(a, b) { return b - a; });
+            
+            if (indices.length > 0 && confirm('确定要删除选中的 ' + indices.length + ' 条记录吗？')) {
+              var currentGroupHistory = history[currentGroup];
+              if (currentGroupHistory) {
+                for(var i = 0; i < indices.length; i++){
+                  currentGroupHistory.splice(indices[i], 1);
+                }
+                saveHistoryToStorage();
+                renderHistoryTable();
+              }
+            }
+        });
+        selectAllBtn.addEventListener('click', function() {
+            var checkboxes = historyTableBody.querySelectorAll('input[type="checkbox"]');
+            var allChecked = true;
+            for(var i = 0; i < checkboxes.length; i++){
+                if(!checkboxes[i].checked){
+                    allChecked = false;
+                    break;
+                }
+            }
+            for(var i = 0; i < checkboxes.length; i++){
+                checkboxes[i].checked = !allChecked;
+            }
+        });
+        selectAllCheckbox.addEventListener('click', function() {
+            var checkboxes = historyTableBody.querySelectorAll('input[type="checkbox"]');
+            var isChecked = selectAllCheckbox.checked;
+            for(var i = 0; i < checkboxes.length; i++){
+                checkboxes[i].checked = isChecked;
+            }
+        });
+
+        faceAContent.addEventListener('input', updateContentCounts);
+        faceBContent.addEventListener('input', updateContentCounts);
+
+        // --- Initialization ---
+        populateGroupSelector();
+        loadGroupIntoForm(currentGroup);
+        generateCards();
+        // 新增：设置初始显示
+        document.getElementById('flippedCount').textContent = '翻开：' + flippedCount;
+      } catch (error) {
+        console.error("An error occurred during script execution:", error);
+        alert("页面加载出错，请刷新重试。");
+      }
+    });
+  </script>
+</body>
+</html>
